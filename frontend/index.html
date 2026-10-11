@@ -195,9 +195,9 @@ body::before {
     <h2 class="section-title fade-up">Technical <span class="grad-text">Features</span></h2>
     <div class="feat-grid" id="cards-container">
       <div class="feat-card fade-up">
-        <div class="feat-ico">🔐</div>
-        <h3>AES-256-CBC</h3>
-        <p>Uses the Advanced Encryption Standard with a 256-bit key and Cipher Block Chaining mode. A fresh random 16-byte IV is generated for every upload to guarantee uniqueness.</p>
+        <div class="feat-ico">🔒</div>
+        <h3>AES-256-GCM (AEAD)</h3>
+        <p>Uses the Advanced Encryption Standard in Galois/Counter Mode with a 256-bit key, 96-bit CSPRNG nonce, and 128-bit authentication tag. Cryptographic Dual-AAD binds file context and metadata to prevent tampering.</p>
       </div>
       <div class="feat-card fade-up">
         <div class="feat-ico">🎲</div>
@@ -206,8 +206,8 @@ body::before {
       </div>
       <div class="feat-card fade-up">
         <div class="feat-ico">📧</div>
-        <h3>Gmail OTP Verification</h3>
-        <p>To access files or their account, users receive a 6-digit OTP sent via secure SMTP. OTPs are securely hashed using SHA-256 in the database and never stored in plain text.</p>
+        <h3>Server-Keyed HMAC OTP</h3>
+        <p>To access files or their account, users receive a 6-digit OTP sent via secure SMTP. OTPs are keyed with server HMAC-SHA-256 digests and never stored in plain text.</p>
       </div>
     </div>
   </div>
@@ -220,8 +220,8 @@ body::before {
     <h2 class="section-title fade-up">From plain file to <span class="grad-text">Secure Payload</span></h2>
     <div class="steps">
       <div class="step fade-up"><div class="step-n">STEP 01</div><div class="step-ico">📁</div><h3>Upload File</h3><p>Select any file up to 50MB. Add receiver email addresses who map to the file.</p></div>
-      <div class="step fade-up"><div class="step-n">STEP 02</div><div class="step-ico">🛡️</div><h3>Hash & Encrypt</h3><p>A SHA-256 hash is generated for tamper detection, then AES-256 kicks in to encrypt.</p></div>
-      <div class="step fade-up"><div class="step-n">STEP 03</div><div class="step-ico">🌸</div><h3>Hide & Bundle</h3><p>The encrypted data and secure hash are bundled seamlessly into a random cover image.</p></div>
+      <div class="step fade-up"><div class="step-n">STEP 02</div><div class="step-ico">🛡️</div><h3>Envelope Encryption</h3><p>An ephemeral 256-bit DEK encrypts the payload via AES-256-GCM, wrapped under KEK_MASTER with Dual AAD.</p></div>
+      <div class="step fade-up"><div class="step-n">STEP 03</div><div class="step-ico">🌸</div><h3>Hide &amp; Bundle</h3><p>The encrypted ciphertext blob is appended cleanly to a format-compliant polyglot carrier JPEG.</p></div>
       <div class="step fade-up"><div class="step-ico">✅</div><h3>OTP Decrypt</h3><p>The receiver enters the OTP sent to their email to unlock the original file securely.</p></div>
     </div>
   </div>

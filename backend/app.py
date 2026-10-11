@@ -397,7 +397,6 @@ def encrypt_route():
     file_doc = {
         "file_uuid": crypto_res.file_uuid,
         "token_hash": crypto_res.token_hash,
-        "token": crypto_res.bearer_token,  # Kept for uploader history/display
         "owner_id": session["user_id"],
         "user_id": session["user_id"],    # Compatibility
         "filename": f.filename,
@@ -453,13 +452,13 @@ def encrypt_route():
 @app.route("/api/download/<identifier>")
 def download_carrier(identifier):
     db = get_db()
-    # Resolve by file_uuid, token, or token_hash
+    # Resolve by file_uuid or token_hash
     cand_hash = hashlib.sha256(identifier.encode("utf-8")).hexdigest()
     f = db.encrypted_files.find_one({
         "$or": [
             {"file_uuid": identifier},
-            {"token": identifier},
-            {"token_hash": cand_hash}
+            {"token_hash": cand_hash},
+            {"token_hash": identifier}
         ],
         "deleted": 0
     })
@@ -499,7 +498,6 @@ def decrypt_upload():
     expired = file_doc.get("expires_at") and datetime.utcnow() > file_doc["expires_at"]
     return jsonify({
         "file_uuid":     file_doc.get("file_uuid"),
-        "token":         file_doc.get("token", ""),  # Capability token placeholder if known
         "original_name": file_doc.get("filename", file_doc.get("original_name")),
         "file_size":     file_doc.get("file_size"),
         "blob_fingerprint": blob_fp,
@@ -518,8 +516,8 @@ def file_info(identifier):
     f = db.encrypted_files.find_one({
         "$or": [
             {"file_uuid": identifier},
-            {"token": identifier},
-            {"token_hash": cand_hash}
+            {"token_hash": cand_hash},
+            {"token_hash": identifier}
         ],
         "deleted": 0
     })
@@ -554,11 +552,14 @@ def request_otp():
 
     db = get_db()
     query = {"deleted": 0}
-    if token:
+    if token and not file_uuid:
         tok_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-        query["$or"] = [{"token_hash": tok_hash}, {"token": token}]
-    elif file_uuid:
+        query["$or"] = [{"token_hash": tok_hash}, {"file_uuid": token}]
+    elif file_uuid and not token:
         query["file_uuid"] = file_uuid
+    elif token and file_uuid:
+        tok_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        query["$or"] = [{"token_hash": tok_hash}, {"file_uuid": file_uuid}]
 
     f = db.encrypted_files.find_one(query)
     if not f:
@@ -579,7 +580,7 @@ def request_otp():
         "blocked_until": {"$gt": datetime.utcnow()}
     })
     if block_rec:
-        return jsonify({"error": "Access temporarily blocked. Try after 30 minutes."}), 429
+        return jsonify({"error": "Access temporarily blocked. Try after 30 minutes.", "blocked": True}), 403
 
     # ─────────────────────────────────────────────────────────────
     #  CRITICAL: Verify-Then-Dispatch (Dual-AAD wrap tag check)
@@ -678,11 +679,14 @@ def decrypt_route():
 
     db = get_db()
     query = {"deleted": 0}
-    if token:
+    if token and not file_uuid:
         tok_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-        query["$or"] = [{"token_hash": tok_hash}, {"token": token}]
-    elif file_uuid:
+        query["$or"] = [{"token_hash": tok_hash}, {"file_uuid": token}]
+    elif file_uuid and not token:
         query["file_uuid"] = file_uuid
+    elif token and file_uuid:
+        tok_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+        query["$or"] = [{"token_hash": tok_hash}, {"file_uuid": file_uuid}]
 
     f = db.encrypted_files.find_one(query)
     if not f:
@@ -699,7 +703,7 @@ def decrypt_route():
         "blocked_until": {"$gt": datetime.utcnow()}
     })
     if block_rec:
-        return jsonify({"error": "Access blocked for 30 minutes", "blocked": True}), 429
+        return jsonify({"error": "Access blocked for 30 minutes", "blocked": True}), 403
 
     otp_rec = db.otp_store.find_one({"file_id": fid_str})
     if not otp_rec:
@@ -729,7 +733,7 @@ def decrypt_route():
                 "status": "blocked",
                 "created_at": datetime.utcnow()
             })
-            return jsonify({"error": "Too many attempts. Blocked for 30 minutes.", "blocked": True}), 429
+            return jsonify({"error": "Too many attempts. Blocked for 30 minutes.", "blocked": True}), 403
 
         left = 3 - attempts
         return jsonify({"error": f"Wrong OTP. {left} attempt(s) remaining.", "attempts_left": left}), 401
@@ -941,7 +945,7 @@ def active_files():
     rows = []
     for f in cursor:
         rows.append({
-            "token": f.get("token"),
+            "token_hash": f.get("token_hash"),
             "file_uuid": f.get("file_uuid"),
             "original_name": f.get("filename", f.get("original_name")),
             "file_size": f.get("file_size"),

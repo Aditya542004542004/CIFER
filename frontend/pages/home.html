@@ -95,9 +95,8 @@
         <div class="form-group">
           <label>Encryption Algorithm</label>
           <select class="form-control" id="algo">
-            <option value="aes256cbc" selected>AES-256-CBC (Recommended)</option>
-            <option value="aes256gcm">AES-256-GCM (Authenticated)</option>
-            <option value="aes128cbc">AES-128-CBC</option>
+            <option value="aes256gcm" selected>AES-256-GCM (AEAD - Recommended)</option>
+            <option value="chacha20poly1305">ChaCha20-Poly1305 (AEAD)</option>
           </select>
         </div>
         <div class="form-group">
@@ -125,13 +124,13 @@
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
           <div>
             <div style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--b1)" id="s-pct">100%</div>
-            <div style="font-size:.82rem;font-weight:600;color:var(--b1)" id="s-lbl">Military Grade</div>
-            <div style="font-size:.72rem;color:var(--text-m)" id="s-algo">AES-256-CBC · SHA-256 · Random IV</div>
+            <div style="font-size:.82rem;font-weight:600;color:var(--b1)" id="s-lbl">Authenticated AEAD</div>
+            <div style="font-size:.72rem;color:var(--text-m)" id="s-algo">AES-256-GCM · 128-bit Tag · Dual AAD</div>
           </div>
-          <div style="font-size:3rem" id="s-icon">🛡️</div>
+          <div style="font-size:3rem" id="s-icon">🔒</div>
         </div>
         <div class="progress-wrap"><div class="progress-fill" id="s-bar" style="width:100%"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:.67rem;color:var(--text-d);margin-top:.3rem"><span>Basic</span><span>Strong</span><span>Military</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:.67rem;color:var(--text-d);margin-top:.3rem"><span>Standard</span><span>Strong</span><span>AEAD Zero-Trust</span></div>
       </div>
 
       <!-- Speed (shown after encrypt) -->
@@ -148,9 +147,9 @@
 
       <!-- Hash -->
       <div class="panel fade-up" id="hash-panel" style="display:none">
-        <div class="ptitle">🔑 SHA-256 Integrity Hash</div>
+        <div class="ptitle">🔑 Ciphertext Blob Fingerprint</div>
         <div class="hash-box" id="hash-val">—</div>
-        <div style="font-size:.7rem;color:var(--text-m);margin-top:.4rem">Stored in MySQL · Verified before every decryption</div>
+        <div style="font-size:.7rem;color:var(--text-m);margin-top:.4rem">Stored in MongoDB · Verified before every decryption</div>
       </div>
 
       <!-- Result -->
@@ -261,7 +260,7 @@
     <div class="panel fade-up panel-glow" style="text-align:center;padding:3rem">
       <div style="font-size:4rem;margin-bottom:.75rem">✅</div>
       <h3 style="font-family:var(--fh);font-size:1rem;margin-bottom:.5rem;color:var(--success)">Decryption Successful!</h3>
-      <p style="color:var(--text-m);font-size:.84rem;margin-bottom:1.5rem">SHA-256 integrity verified. Your file is ready.</p>
+      <p style="color:var(--text-m);font-size:.84rem;margin-bottom:1.5rem">AEAD authentication tag verified. Your file is ready.</p>
       <div style="background:rgba(59,158,255,.03);border:1px solid rgba(59,158,255,.09);border-radius:var(--rsm);padding:1rem;margin-bottom:1.5rem;text-align:left">
         <div style="font-size:.68rem;color:var(--text-m);margin-bottom:.25rem;text-transform:uppercase">Decrypted File</div>
         <div style="font-family:var(--fh);font-size:.85rem;color:var(--text)" id="dec-fname">—</div>
@@ -391,7 +390,7 @@ async function requestOTP(){
   try{
     const tok = currentToken || document.getElementById('dec-token-input')?.value?.trim();
     if(!tok){toast('Please provide capability token or upload carrier image','warning');return;}
-    const res=await apiFetch('/api/request-otp',{method:'POST',body:JSON.stringify({token:tok})});
+    const res=await apiFetch('/api/request-otp',{method:'POST',body:JSON.stringify({token:tok, file_uuid:tok})});
     const d=await res.json();
     if(!res.ok){toast(d.error||'Failed to send OTP','danger');return;}
     document.getElementById('step1').style.display='none';
@@ -428,7 +427,7 @@ async function verifyOTP(){
   if(otp.length<6){showOtpAlert('Enter all 6 digits','warning');return;}
 
   try{
-    const res=await apiFetch('/api/decrypt',{method:'POST',body:JSON.stringify({token:currentToken,otp})});
+    const res=await apiFetch('/api/decrypt',{method:'POST',body:JSON.stringify({token:currentToken,file_uuid:currentToken,otp})});
     if(res.ok){
       clearInterval(otpTimer);
       const blob=await res.blob();
@@ -472,7 +471,7 @@ function showOtpAlert(msg,type){
 }
 
 async function resendOTP(){
-  const res=await apiFetch('/api/request-otp',{method:'POST',body:JSON.stringify({token:currentToken})});
+  const res=await apiFetch('/api/request-otp',{method:'POST',body:JSON.stringify({token:currentToken,file_uuid:currentToken})});
   const d=await res.json();
   document.querySelectorAll('#otp-inputs input').forEach(i=>i.value='');
   document.querySelectorAll('#otp-inputs input')[0].focus();
@@ -508,9 +507,8 @@ function resetDec(){
 let selFile=null, receivers=[];
 
 const algoMap={
-  aes256cbc:{pct:100,lbl:'Military Grade',algo:'AES-256-CBC · SHA-256 · Random IV',icon:'🛡️'},
-  aes256gcm:{pct:100,lbl:'Military Grade+',algo:'AES-256-GCM · Authenticated Encryption',icon:'🔒'},
-  aes128cbc:{pct:65, lbl:'Strong',algo:'AES-128-CBC · SHA-256',icon:'🔐'},
+  aes256gcm:{pct:100,lbl:'Authenticated AEAD',algo:'AES-256-GCM · 128-bit Tag · Dual AAD',icon:'🔒'},
+  chacha20poly1305:{pct:100,lbl:'Poly1305 AEAD',algo:'ChaCha20-Poly1305 · 128-bit Tag · Dual AAD',icon:'🛡️'},
 };
 document.getElementById('algo').addEventListener('change',function(){
   const m=algoMap[this.value];
@@ -599,13 +597,13 @@ async function doEncrypt(){
     toast('Encrypted successfully! Downloading image...','success',4000);
 
     // Download the Steganography Image
-    const resDown = await fetch(API+'/api/download/'+d.token, {credentials:'include'});
+    const resDown = await fetch(API+'/api/download/'+(d.file_uuid || d.token), {credentials:'include'});
     if(resDown.ok){
       const blob = await resDown.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = d.token + ".jpg";
+      a.download = (d.file_uuid || "cifer_carrier") + ".jpg";
       document.body.appendChild(a);
       a.click();
       a.remove();

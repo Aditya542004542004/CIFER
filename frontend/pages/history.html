@@ -144,7 +144,7 @@ function viewDetail(id){
     <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--text-m);font-size:.8rem">Status</span>${stBadge(r.status)}</div>
     <div style="display:flex;justify-content:space-between"><span style="color:var(--text-m);font-size:.8rem">Detail</span><span style="font-size:.82rem;text-align:right;max-width:250px">${esc(r.detail||'—')}</span></div>
     <div style="display:flex;justify-content:space-between"><span style="color:var(--text-m);font-size:.8rem">Date</span><span style="font-size:.82rem">${r.created_at}</span></div>
-    ${r.status==='tampered'?'<div class="alert alert-danger" style="margin:0">⚠️ SHA-256 hash mismatch. File was modified.</div>':''}
+    ${r.status==='tampered'?'<div class="alert alert-danger" style="margin:0">⚠️ AEAD context verification failed. File or metadata was tampered with.</div>':''}
     ${r.status==='blocked'?'<div class="alert alert-warning" style="margin:0">🚫 Access blocked after 3 failed OTP attempts.</div>':''}
   </div>`);
 }
