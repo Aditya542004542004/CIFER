@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CIFER — Secure File Encryption</title>
+<link rel="stylesheet" href="assets/css/style.css"/>
+<style>
+/* LANDING BACKGROUND */
+body {
+    background: url('https://i.pinimg.com/736/df/d4/d6/dfd4d69f00f61bbdc9c9.jpg') no-repeat center center / cover !important;
+    background-attachment: fixed !important;
+}
+body::before {
+    content:'';
+    position: fixed; inset: 0;
+    background: rgba(2, 31, 33, 0.75); /* Dark teal overlay to ensure contrast */
+    z-index: -1;
+    pointer-events: none;
+}
+.liquid-bg, #bg-canvas { display: none !important; }
+
+/* CYBER HERO */
+.cyber-hero { min-height: 100vh; display: grid; grid-template-columns: auto 1fr auto; gap: 2rem; align-items: center; justify-content: center; padding: 6rem 2rem 2rem; position: relative; z-index: 1; overflow: hidden; max-width: 1400px; margin: 0 auto; }
+.cyber-center { display: flex; flex-direction: column; align-items: center; text-align: center; margin-top: -3rem; }
+.cyber-maintitle { font-family: var(--fh); font-size: clamp(3rem, 7vw, 6rem); font-weight: 700; color: #fff; letter-spacing: 2px; line-height: 1; margin-bottom: 0; text-shadow: 0 0 20px rgba(0,229,255,0.3); }
+.cyber-robot { width: 300px; height: 350px; position: relative; margin: -1rem 0 2rem; display: flex; align-items: center; justify-content: center; animation: floatRobo 6s ease-in-out infinite alternate; }
+.cyber-ring { position: absolute; width: 280px; height: 280px; border: 2px solid var(--b1); border-radius: 50%; border-top-color: transparent; border-bottom-color: transparent; animation: spin 8s linear infinite; box-shadow: 0 0 40px rgba(0,229,255,0.2); }
+.cyber-core { position: absolute; width: 140px; height: 180px; background: linear-gradient(180deg, var(--bg) 0%, #001a1a 100%); border: 1px solid var(--b1); border-radius: 50px 50px 30px 30px; box-shadow: inset 0 0 30px rgba(0,229,255,0.5), 0 0 40px rgba(0,229,255,0.4); overflow: hidden; }
+.cyber-core::after { content: ''; position: absolute; top: 45%; left: 20%; right: 20%; height: 5px; background: var(--b1); box-shadow: 0 0 25px 5px var(--b1); animation: blink 4s infinite;}
+.cyber-core::before { content: ''; position: absolute; bottom: -20px; left: 10%; right: 10%; height: 60px; border: 2px solid var(--b3); opacity: 0.5; border-radius: 50%; box-shadow: 0 0 30px var(--b3); } /* Mustard Touch */
+.cyber-btn { background: rgba(0,229,255,0.1); border: 1px solid var(--b1); color: #fff; padding: 1.1rem 2.5rem; font-family: var(--fh); font-size: 0.95rem; letter-spacing: 2px; border-radius: 50px; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 20px rgba(0,229,255,0.15); backdrop-filter: blur(5px); }
+.cyber-btn:hover { background: var(--b1); color: var(--bg); box-shadow: 0 0 35px var(--b1); transform: scale(1.05); }
+.cyber-side { display: flex; flex-direction: column; gap: 1.5rem; z-index: 2; }
+.cyber-left { align-items: flex-start; }
+.cyber-right { align-items: flex-end; }
+.cyber-widget { display: flex; align-items: center; gap: 1rem; background: rgba(5,8,15,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(0,229,255,0.15); padding: 1.25rem 1.5rem; border-radius: 16px; transition: transform 0.3s, border-color 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); min-width: 260px; }
+.cyber-widget:hover { transform: translateX(10px); border-color: rgba(0,229,255,0.5); }
+.cw-icon { font-size: 1.8rem; text-shadow: 0 0 15px rgba(0,229,255,0.5); filter: hue-rotate(-10deg); }
+.cw-text { font-size: 0.88rem; color: #a3c2c2; line-height: 1.4; font-weight: 500; }
+.cyber-glass-card { background: rgba(5,8,15,0.6); backdrop-filter: blur(15px); border: 1px solid rgba(0,229,255,0.15); border-radius: 20px; padding: 2.5rem 2rem; width: 330px; text-align: left; box-shadow: 0 20px 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 1.5rem; transition: border-color 0.3s; }
+.cyber-glass-card:hover { border-color: rgba(0,229,255,0.4); }
+.cgc-title { font-size: 0.95rem; color: #fff; line-height: 1.6; }
+.cgc-play { width: 100%; height: 160px; background: rgba(0,229,255,0.03); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,229,255,0.1); position: relative; overflow: hidden; cursor: pointer; box-shadow: inset 0 0 20px rgba(0,229,255,0.05); }
+.cgc-play::before { content: ''; position: absolute; inset: 0; background: linear-gradient(45deg, transparent, rgba(0,229,255,0.08), transparent); transform: translateX(-100%); transition: transform 0.6s; }
+.cgc-play:hover::before { transform: translateX(100%); }
+.play-btn { width: 64px; height: 64px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #fff; text-indent: 5px; backdrop-filter: blur(8px); transition: transform 0.3s; }
+.cgc-play:hover .play-btn { transform: scale(1.1); background: rgba(255,255,255,0.15); }
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes blink { 0%, 96%, 98% { opacity: 1; } 97% { opacity: 0; } }
+@keyframes floatRobo { 100% { transform: translateY(-15px); } }
+
+@media(max-width: 1024px) {
+  .cyber-hero { grid-template-columns: 1fr; gap: 3rem; text-align: center; }
+  .cyber-left, .cyber-right { align-items: center; }
+  .cyber-widget:hover { transform: translateY(-5px); }
+  .cyber-glass-card { width: 100%; max-width: 400px; }
+}
+
+/* HOW IT WORKS */
+.how{padding:6rem 0;background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 50%,var(--bg) 100%)}
+.steps{display:flex;gap:1rem;position:relative}
+.step{flex:1;background:var(--panel);border:1px solid var(--panel-b);border-radius:var(--r);padding:1.75rem 1.25rem;text-align:center;transition:all var(--tr);position:relative;z-index:1}
+.step:hover{transform:translateY(-6px);border-color:rgba(59,158,255,.25);box-shadow:0 20px 50px rgba(59,158,255,.06)}
+.step-ico{font-size:2rem;margin-bottom:.75rem}
+.step-n{font-family:var(--fh);font-size:.6rem;color:var(--b1);letter-spacing:3px;margin-bottom:.5rem}
+.step h3{font-family:var(--fh);font-size:.78rem;margin-bottom:.4rem}
+.step p{font-size:.77rem;color:var(--text-m);line-height:1.65}
+
+/* FEATURES GRID & SECTIONS */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+.feat-card{background:var(--panel);border:1px solid var(--panel-b);border-radius:var(--r);padding:1.75rem;transition:transform var(--tr);position:relative;overflow:hidden;}
+.feat-card:hover{transform:translateY(-8px) scale(1.02);border-color:rgba(225,173,1,0.3);box-shadow:0 15px 40px rgba(225,173,1,0.08); z-index:2;}
+.feat-card::before { content:''; position:absolute; inset:0; background:radial-gradient(400px circle at var(--mouse-x, -500px) var(--mouse-y, -500px), rgba(225,173,1,0.1), transparent 40%); z-index:0; transition:opacity .3s; opacity:0; pointer-events:none; }
+.feat-card:hover::before { opacity: 1; }
+.feat-card > * { position:relative; z-index:1; }
+.feat-ico{font-size:2.2rem;margin-bottom:1rem; transform:scale(1); transition:transform .3s cubic-bezier(.175,.885,.32,1.275);}
+.feat-card:hover .feat-ico { transform:scale(1.2) translateY(-4px); }
+.feat-card h3{font-family:var(--fh);font-size:.82rem;margin-bottom:.5rem}
+.feat-card p{font-size:.8rem;color:var(--text-m);line-height:1.7}
+
+.about-panel{padding:1.75rem;margin-bottom:1.25rem;border:1px solid var(--panel-b);border-radius:var(--r); background:var(--panel)}
+.ptitle-sec{font-family:var(--fh);font-size:.78rem;font-weight:700;color:var(--b1);margin-bottom:1rem;letter-spacing:1px;text-transform:uppercase}
+
+/* CTA */
+.cta-box{background:linear-gradient(135deg,rgba(59,158,255,.08),rgba(102,16,242,.06));border:1px solid rgba(59,158,255,.18);border-radius:22px;padding:4rem 3rem;text-align:center;position:relative;overflow:hidden;animation:borderGlow 3s ease-in-out infinite}
+.cta-box h2{font-family:var(--fh);font-size:1.8rem;font-weight:700;margin-bottom:.75rem;position:relative}
+.cta-box p{color:var(--text-m);margin-bottom:2rem;position:relative}
+
+/* MODAL AUTH */
+/* SHRUHH GLASS AUTH MODAL - TEAL/MUSTARD THEME */
+.auth-bg { position:fixed;inset:0;background:rgba(5,8,15,.65);z-index:9990;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity 0.4s ease; }
+.auth-bg.show { opacity:1;pointer-events:all; }
+.auth-card { background:rgba(0,128,128,0.15); border:1px solid rgba(0,229,255,0.15); border-radius:32px; padding:3rem 2.5rem; width:100%; max-width:400px; position:relative; transform:translateY(30px); opacity:0; transition:all 0.5s cubic-bezier(.4,auto,.2,1); box-shadow:0 30px 60px rgba(0,0,0,0.6), inset 0 0 20px rgba(0,229,255,0.05); }
+.auth-bg.show .auth-card { transform:translateY(0); opacity:1; }
+.auth-card::before { content:''; position:absolute; inset:0; border-radius:32px; background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>'); opacity: 0.12; mix-blend-mode: overlay; pointer-events: none; }
+.auth-x { position:absolute;top:1.5rem;right:1.5rem;background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.4rem;cursor:pointer;padding:.3rem;transition:color var(--tr); z-index:10; }
+.auth-x:hover { color:#fff; }
+.auth-logo { margin: 0 auto 1rem; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(0,229,255,0.6); border-radius: 12px; transform: rotate(45deg); box-shadow:0 0 15px rgba(0,229,255,0.1); }
+.auth-logo::after { content:''; width:24px; height:12px; border:2px solid rgba(225,173,1,0.8); position:absolute; transform:rotate(-45deg); border-radius:4px; }
+.auth-brand { text-align:center; font-family:var(--fb); font-size:1.2rem; font-weight:400; letter-spacing:3px; color:#fff; margin-bottom:1.5rem; }
+.auth-sub { text-align:center; font-family:var(--fb); font-size:1.4rem; font-weight:400; color:#fff; margin-bottom:2rem; letter-spacing:0.5px; }
+.glass-group { margin-bottom: 1.25rem; }
+.glass-group label { display:block; font-size:0.85rem; color:rgba(255,255,255,0.9); margin-bottom:0.4rem; }
+.glass-input { width:100%; background:rgba(0,0,0,0.25); border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:0.9rem 1rem; color:#fff; font-family:var(--fb); transition:border-color 0.3s, background 0.3s; }
+.glass-input:focus { outline:none; border-color:rgba(0,229,255,0.8); background:rgba(0,0,0,0.4); box-shadow:0 0 15px rgba(0,229,255,0.3); }
+.glass-btn { width:100%; background:linear-gradient(135deg, rgba(0,128,128,0.8), rgba(0,229,255,0.4)); border:1px solid rgba(0,229,255,0.3); padding:0.9rem; border-radius:12px; color:#fff; font-size:1rem; font-weight:500; cursor:pointer; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 10px 20px rgba(0,0,0,0.3); margin-top:0.5rem; }
+.glass-btn:hover { transform:translateY(-2px); box-shadow:0 15px 25px rgba(0,0,0,0.4), 0 0 20px rgba(0,229,255,0.3); border-color: rgba(225,173,1,0.5); }
+.auth-link { font-size:0.85rem; color:rgba(255,255,255,0.7); cursor:pointer; text-decoration:none; transition:color 0.2s; }
+.auth-link:hover { color:var(--b1); }
+.auth-footer { text-align:center; margin-top:2rem; font-size:0.85rem; color:rgba(255,255,255,0.7); }
+.auth-footer span { color:var(--b1); font-weight:600; cursor:pointer; padding-left:0.25rem; transition:all 0.2s; }
+.auth-footer span:hover { text-shadow:0 0 10px rgba(225,173,1,0.5); }
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){.steps{flex-direction:column}.feat-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="liquid-bg"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div><div class="bg-dots"></div><div class="bg-lines"></div></div>
+<div id="cur"></div><div id="cring"></div>
+<div id="toast-container"></div>
+
+<nav class="navbar">
+  <div class="nav-logo"><a href="index.html">CIFER</a></div>
+  <div class="nav-right" style="margin-left: auto;">
+    <div id="nav-auth-btns" style="display:flex;gap:.75rem">
+      <button class="btn btn-outline btn-sm" onclick="openAuth('login')">Login</button>
+      <button class="btn btn-primary btn-sm" onclick="openAuth('register')">Register</button>
+    </div>
+  </div>
+</nav>
+
+<!-- CYBER HERO SECTION -->
+<section class="cyber-hero">
+  <!-- Left widgets -->
+  <div class="cyber-side cyber-left fade-up" style="animation-delay: 0.1s;">
+    <div class="cyber-widget">
+      <div class="cw-icon">🛡️</div>
+      <div class="cw-text">Enterprise-Grade<br><strong style="color:#fff">Security</strong></div>
+    </div>
+    <div class="cyber-widget">
+      <div class="cw-icon">🤝</div>
+      <div class="cw-text">Trusted by<br><strong style="color:#fff">1000+ Clients</strong></div>
+    </div>
+    <div class="cyber-widget">
+      <div class="cw-icon">⏱️</div>
+      <div class="cw-text">24/7 File<br><strong style="color:#fff">Protection</strong></div>
+    </div>
+  </div>
+
+  <!-- Center elements -->
+  <div class="cyber-center fade-up">
+    <h1 class="cyber-maintitle">CYBER<br><span style="font-size:0.8em; color:var(--b3); text-shadow: 0 0 15px rgba(225,173,1,0.5);">DEFENSE</span></h1>
+    <div class="cyber-robot">
+      <div class="cyber-ring"></div>
+      <div class="cyber-core"></div>
+    </div>
+    <button class="cyber-btn" onclick="openAuth('register')">GET PROTECTED NOW ↗</button>
+  </div>
+
+  <!-- Right widget -->
+  <div class="cyber-side cyber-right fade-up" style="animation-delay: 0.2s;">
+    <div class="cyber-glass-card">
+      <div class="cgc-title">Protect What Matters<br>Most — <strong>Your Digital World</strong></div>
+      <div class="cgc-play" onclick="openAuth('login')">
+        <div class="play-btn">▶</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECT DESCRIPTION -->
+<section class="section" style="padding-top: 2rem;">
+  <div class="container">
+    <div class="section-tag fade-up">The Concept</div>
+    <h2 class="section-title fade-up">Why <span class="grad-text">CIFER</span>?</h2>
+    <div class="two-col fade-up" style="gap:1.25rem">
+      <div class="about-panel">
+        <div class="ptitle-sec">🎯 The Problem</div>
+        <p style="font-size:.86rem;color:var(--text-m);line-height:1.85">Traditional file sharing is broken. When you email a sensitive document, it travels through servers in plain text. Cloud providers can access your files. Shared passwords get leaked. There's no real verification that the right person is downloading it.</p>
+      </div>
+      <div class="about-panel">
+        <div class="ptitle-sec">💡 The Solution</div>
+        <p style="font-size:.86rem;color:var(--text-m);line-height:1.85">CIFER combines two techniques: AES-256 encryption makes the file mathematically unreadable, and steganography bundles it within a cute nature image. Receivers must verify their identity via a time-limited 6-digit OTP sent to their Gmail.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" style="padding-top: 1rem;">
+  <div class="container">
+    <div class="section-tag fade-up">Under the Hood</div>
+    <h2 class="section-title fade-up">Technical <span class="grad-text">Features</span></h2>
+    <div class="feat-grid" id="cards-container">
+      <div class="feat-card fade-up">
+        <div class="feat-ico">🔐</div>
+        <h3>AES-256-CBC</h3>
+        <p>Uses the Advanced Encryption Standard with a 256-bit key and Cipher Block Chaining mode. A fresh random 16-byte IV is generated for every upload to guarantee uniqueness.</p>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-ico">🎲</div>
+        <h3>Random Cover Images</h3>
+        <p>At encryption time, the server randomly assigns one of 10 cute nature themes (flowers, animals). No one can tell the image contains encrypted secrets.</p>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-ico">📧</div>
+        <h3>Gmail OTP Verification</h3>
+        <p>To access files or their account, users receive a 6-digit OTP sent via secure SMTP. OTPs are securely hashed using SHA-256 in the database and never stored in plain text.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS & SECURITY -->
+<section class="how">
+  <div class="container">
+    <div class="section-tag fade-up">Security Workflow</div>
+    <h2 class="section-title fade-up">From plain file to <span class="grad-text">Secure Payload</span></h2>
+    <div class="steps">
+      <div class="step fade-up"><div class="step-n">STEP 01</div><div class="step-ico">📁</div><h3>Upload File</h3><p>Select any file up to 50MB. Add receiver email addresses who map to the file.</p></div>
+      <div class="step fade-up"><div class="step-n">STEP 02</div><div class="step-ico">🛡️</div><h3>Hash & Encrypt</h3><p>A SHA-256 hash is generated for tamper detection, then AES-256 kicks in to encrypt.</p></div>
+      <div class="step fade-up"><div class="step-n">STEP 03</div><div class="step-ico">🌸</div><h3>Hide & Bundle</h3><p>The encrypted data and secure hash are bundled seamlessly into a random cover image.</p></div>
+      <div class="step fade-up"><div class="step-ico">✅</div><h3>OTP Decrypt</h3><p>The receiver enters the OTP sent to their email to unlock the original file securely.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section">
+  <div class="container">
+    <div class="cta-box fade-up">
+      <h2>Ready to <span class="grad-text">hide your files?</span></h2>
+      <p>Create your free account to begin encrypting files securely.</p>
+      <button onclick="openAuth('register')" class="btn btn-primary btn-lg">Create Free Account →</button>
+    </div>
+  </div>
+</section>
+
+<footer class="footer container" style="justify-content:center; text-align:center;">
+  <div class="footer-logo">CIFER</div>
+  <div class="footer-copy" style="margin: 0;">© 2026 CIFER · Secure File Encryption Framework</div>
+</footer>
+
+<!-- NEW SHRUHH PURPLE GLASS AUTH MODAL -->
+<div class="auth-bg" id="auth-modal">
+  <div class="auth-card">
+    <button class="auth-x" onclick="closeAuth()">✕</button>
+    <div class="auth-logo"></div>
+    <div class="auth-brand">CIFER</div>
+    <div class="auth-sub" id="auth-subtitle">Welcome Back</div>
+
+    <!-- MAIN LOGIN / REGISTER -->
+    <div id="auth-main-view">
+      <!-- Login Form -->
+      <div id="frm-login">
+        <div class="glass-group">
+          <label>Email address</label>
+          <input class="glass-input" type="email" id="l-email" />
+        </div>
+        <div class="glass-group">
+          <label>Password</label>
+          <input class="glass-input" type="password" id="l-pass" />
+        </div>
+        <div style="text-align:left; margin-bottom:1.5rem">
+          <a class="auth-link">Forget Password ?</a>
+        </div>
+        <div id="l-err"></div>
+        <button class="glass-btn" onclick="doLogin()">Login</button>
+        <div class="auth-footer" id="login-footer">Are You New Member ? <span onclick="switchAuthTab('register')">Sign UP</span></div>
+      </div>
+
+      <!-- Register Form -->
+      <div id="frm-reg" style="display:none">
+        <div class="glass-group">
+          <label>Full Name</label>
+          <input class="glass-input" type="text" id="r-name" />
+        </div>
+        <div class="glass-group">
+          <label>Email address</label>
+          <input class="glass-input" type="email" id="r-email" />
+        </div>
+        <div class="glass-group">
+          <label>Password</label>
+          <input class="glass-input" type="password" id="r-pass" />
+        </div>
+        <div id="r-err"></div>
+        <button class="glass-btn" onclick="doRegister()">Sign Up</button>
+        <div class="auth-footer" id="reg-footer">Already a Member ? <span onclick="switchAuthTab('login')">Log IN</span></div>
+      </div>
+    </div>
+
+    <!-- OTP VIEW (For Login only) -->
+    <div id="auth-otp-view" style="display:none">
+      <div class="glass-group" style="text-align:center">
+        <label style="color:rgba(255,255,255,0.8); margin-bottom:1.5rem">Enter 6-digit OTP sent to your email.</label>
+      </div>
+      <div class="otp-row" id="auth-otp-inputs" style="display:flex; justify-content:space-between; margin-bottom:1.5rem">
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,0)" onkeydown="otpBack(event,0)" class="glass-input" style="width:14%; text-align:center; padding:0.8rem 0; font-size:1.2rem"/>
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,1)" onkeydown="otpBack(event,1)" class="glass-input" style="width:14%; text-align:center; padding:0.8rem 0; font-size:1.2rem"/>
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,2)" onkeydown="otpBack(event,2)" class="glass-input" style="width:14%; text-align:center; padding:0.8rem 0; font-size:1.2rem"/>
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,3)" onkeydown="otpBack(event,3)" class="glass-input" style="width:14%; text-align:center; padding:0.8rem 0; font-size:1.2rem"/>
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,4)" onkeydown="otpBack(event,4)" class="glass-input" style="width:14%; text-align:center; padding:0.8rem 0; font-size:1.2rem"/>
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,5)" onkeydown="otpBack(event,5)" class="glass-input" style="width:14%; text-align:center; padding:0.8rem 0; font-size:1.2rem"/>
+      </div>
+      <div id="otp-err"></div>
+      <button class="glass-btn" onclick="submitLoginOTP()">Verify Identity</button>
+      <div class="auth-footer">Did not receive? <span onclick="doLogin()">Resend OTP</span></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="assets/js/main.js"></script>
+<script>
+// Typewriter
+const phrases=['ENCRYPT.','PROTECT.','HIDE.','SECURE.'];
+let pi=0,ci=0,del=false;
+function tw(){
+  const el=document.getElementById('typeText'); if(!el)return;
+  const p=phrases[pi];
+  if(!del){el.textContent=p.slice(0,++ci);if(ci===p.length){del=true;setTimeout(tw,1900);return;}}
+  else{el.textContent=p.slice(0,--ci);if(ci===0){del=false;pi=(pi+1)%phrases.length;}}
+  setTimeout(tw,del?55:120);
+}
+tw();
+
+// Verify user is not already logged in
+async function checkAuth(){
+    const d = await loadAuthState();
+    if(d.logged_in) window.location.href='pages/home.html';
+}
+checkAuth();
+
+// Interactive glowing cards
+document.getElementById('cards-container').addEventListener('mousemove', e => {
+  for(const card of document.querySelectorAll('.feat-card')) {
+    const rect = card.getBoundingClientRect(),
+          x = e.clientX - rect.left,
+          y = e.clientY - rect.top;
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
+  }
+});
+
+// --- AUTH MODAL LOGIC ---
+const authBg = document.getElementById('auth-modal');
+let pendingLoginEmail = '';
+
+function openAuth(type) {
+  authBg.classList.add('show');
+  document.getElementById('auth-main-view').style.display='block';
+  document.getElementById('auth-otp-view').style.display='none';
+  document.querySelectorAll('#auth-otp-inputs input').forEach(i=>i.value='');
+  switchAuthTab(type);
+}
+function closeAuth() {
+  authBg.classList.remove('show');
+}
+function switchAuthTab(t) {
+  document.getElementById('frm-login').style.display=t==='login'?'block':'none';
+  document.getElementById('frm-reg').style.display=t==='register'?'block':'none';
+  document.getElementById('auth-subtitle').textContent=t==='login'?'Welcome Back':'Create Account';
+}
+function showErr(id,msg){document.getElementById(id).innerHTML=msg?`<div class="alert alert-danger" style="margin-bottom:0.75rem">${msg}</div>`:''}
+
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  showErr('l-err','');
+  if(!email||!pass){showErr('l-err','Please fill in all fields');return;}
+  try{
+    const res=await apiFetch('/api/login',{method:'POST',body:JSON.stringify({email,password:pass})});
+    const d=await res.json();
+    if(!res.ok){showErr('l-err',d.error||'Login failed');return;}
+    
+    // Switch to OTP View
+    pendingLoginEmail = d.email;
+    document.getElementById('auth-main-view').style.display='none';
+    document.getElementById('auth-otp-view').style.display='block';
+    
+    toast('OTP sent to your email','success');
+    
+  }catch(e){showErr('l-err','Cannot connect to server.');}
+}
+
+async function submitLoginOTP() {
+  const inputs=document.querySelectorAll('#auth-otp-inputs input');
+  const otp=Array.from(inputs).map(i=>i.value).join('');
+  if(otp.length<6){showErr('otp-err','Enter all 6 digits');return;}
+  showErr('otp-err','');
+
+  try{
+    const res=await apiFetch('/api/verify-login',{method:'POST',body:JSON.stringify({email:pendingLoginEmail,otp})});
+    const d=await res.json();
+    if(!res.ok){
+      showErr('otp-err',d.error||'Verification failed');
+      inputs.forEach(i=>{i.value='';i.classList.add('error');setTimeout(()=>i.classList.remove('error'),700)});
+      inputs[0].focus();
+      return;
+    }
+    closeAuth();
+    toast('Welcome back, '+d.name+'!','success');
+    setTimeout(()=>window.location.href='pages/home.html',600);
+  }catch(e){showErr('otp-err','Server error.');}
+}
+
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const pass=document.getElementById('r-pass').value;
+  showErr('r-err','');
+  if(!name||!email||!pass){showErr('r-err','Fill in all fields');return;}
+  if(pass.length<8){showErr('r-err','Password must be at least 8 characters');return;}
+  
+  try{
+    const res=await apiFetch('/api/register',{method:'POST',body:JSON.stringify({name,email,password:pass})});
+    const d=await res.json();
+    if(!res.ok){showErr('r-err',d.error||'Registration failed');return;}
+    closeAuth();
+    toast('Account created! Welcome, '+d.name,'success');
+    setTimeout(()=>window.location.href='pages/home.html',700);
+  }catch(e){showErr('r-err','Cannot connect to server.');}
+}
+</script>
+</body>
+</html>

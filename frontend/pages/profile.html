@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CIFER — Profile</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+<style>
+.prof-layout{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:1080px;margin:0 auto;padding:0 2rem 5rem}
+.panel{padding:1.6rem}
+.ptitle-sec{font-family:var(--fh);font-size:.78rem;font-weight:700;color:var(--b1);margin-bottom:1.15rem;letter-spacing:1px;text-transform:uppercase}
+.active-file{display:flex;align-items:center;gap:.85rem;padding:.85rem 0;border-bottom:1px solid rgba(59,158,255,.06)}
+.active-file:last-child{border-bottom:none}
+.quick-link{display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;background:rgba(59,158,255,.03);border:1px solid rgba(59,158,255,.08);border-radius:var(--rsm);margin-bottom:.65rem;transition:all var(--tr);cursor:pointer;text-decoration:none;color:var(--text)}
+.quick-link:hover{background:var(--b-dim);border-color:rgba(59,158,255,.22);transform:translateX(4px)}
+.quick-link-ico{font-size:1.4rem;flex-shrink:0;width:36px;text-align:center}
+.quick-link-title{font-size:.85rem;font-weight:600;margin-bottom:.05rem}
+.quick-link-sub{font-size:.72rem;color:var(--text-m)}
+@media(max-width:768px){.prof-layout{grid-template-columns:1fr;padding:0 1.5rem 4rem}}
+</style>
+</head>
+<body>
+
+
+<div id="bg-canvas"><div class="bg-dots"></div><div class="bg-lines"></div><div class="bg-orb orb1"></div><div class="bg-orb orb2"></div><div class="bg-scan"></div></div>
+<div id="cur"></div><div id="cring"></div>
+<div id="toast-container"></div>
+
+<nav class="navbar">
+  <div class="nav-logo"><a href="home.html">CIFER</a></div>
+  
+  <div class="nav-right" style="margin-left: auto;">
+    <div class="nav-links" id="auth-nav-block" style="display:none; align-items:center;">
+      
+      <div class="profile-dropdown">
+        <div class="profile-toggle">
+          <div style="width:24px;height:24px;background:var(--b1);color:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700">U</div>
+          <span style="font-size:.85rem;font-weight:600">Profile</span>
+          <span style="font-size:.8rem;opacity:.7">▼</span>
+        </div>
+        <div class="profile-menu">
+          <a href="profile.html" class="pmenu-item">👤 View Profile</a>
+          <a href="history.html" class="pmenu-item">📜 Activity History</a>
+          <a href="settings.html" class="pmenu-item">⚙️ Settings</a>
+          <div style="height:1px;background:rgba(0,128,128,.2);margin:.5rem 0"></div>
+          <a href="#" class="pmenu-item" style="color:var(--danger)" onclick="doLogout()">🚪 Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Profile Hero -->
+<div class="profile-hero">
+  <div class="avatar" id="p-av">?</div>
+  <div>
+    <div style="font-size:.7rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--b1);margin-bottom:.3rem">CIFER USER</div>
+    <h2 style="font-family:var(--fh);font-size:1.6rem;font-weight:700;margin-bottom:.2rem;line-height:1.1" id="p-name">Loading...</h2>
+    <p style="color:var(--text-m);font-size:.84rem" id="p-email">—</p>
+    <div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap">
+      <span class="badge badge-success">✅ Verified</span>
+      <span class="badge badge-info">🔐 AES-256</span>
+      <span class="badge badge-info" id="p-since">—</span>
+    </div>
+  </div>
+  <button class="btn btn-outline btn-sm" style="margin-left:auto;align-self:flex-start" onclick="toggleEdit()">✏️ Edit Profile</button>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="margin-bottom:0">
+  <div class="stat-card fade-up"><div class="snum" id="s-enc">—</div><div class="slbl">Files Encrypted</div></div>
+  <div class="stat-card fade-up"><div class="snum" id="s-dec">—</div><div class="slbl">Files Decrypted</div></div>
+  <div class="stat-card fade-up"><div class="snum" id="s-active">—</div><div class="slbl">Active Files</div></div>
+  <div class="stat-card fade-up" style="border-color:rgba(255,68,102,.15)"><div class="snum" style="color:var(--danger)" id="s-tamper">—</div><div class="slbl">Tamper Alerts</div></div>
+</div>
+
+<div class="prof-layout" style="margin-top:1.5rem">
+  <!-- LEFT -->
+  <div>
+    <!-- Edit Panel -->
+    <div class="panel fade-up" id="edit-panel" style="display:none;margin-bottom:1.25rem;border:1px solid var(--panel-b);border-radius:var(--r)">
+      <div class="ptitle-sec">✏️ Edit Profile</div>
+      <div class="form-group"><label>Full Name</label><input class="form-control" id="e-name" placeholder="Your Name"/></div>
+      <div class="form-group"><label>Email</label><input class="form-control" type="email" id="e-email" placeholder="you@example.com"/></div>
+      <div class="form-group"><label>New Password <span style="font-weight:400;text-transform:none;font-size:.7rem;color:var(--text-d)">(leave blank to keep)</span></label><input class="form-control" type="password" id="e-pass" placeholder="Min 8 characters"/></div>
+      <div style="display:flex;gap:.75rem">
+        <button class="btn btn-primary" style="flex:1" onclick="saveProfile()">Save Changes</button>
+        <button class="btn btn-outline" style="flex:1" onclick="toggleEdit()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Security Settings -->
+    <div class="panel fade-up" style="margin-bottom:1.25rem;border:1px solid var(--panel-b);border-radius:var(--r)">
+      <div class="ptitle-sec">🔒 Security Settings</div>
+      <div class="toggle-row">
+        <div><div style="font-size:.86rem;font-weight:600">Email Notifications</div><div style="font-size:.74rem;color:var(--text-m)">Get notified when OTPs are requested for your files</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on');toast('Setting saved','success',1500)"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div style="font-size:.86rem;font-weight:600">Tamper Alerts</div><div style="font-size:.74rem;color:var(--text-m)">Email alert when file integrity check fails</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on');toast('Setting saved','success',1500)"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div style="font-size:.86rem;font-weight:600">Auto-Delete Expired Files</div><div style="font-size:.74rem;color:var(--text-m)">Remove encrypted files from server after expiry</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on');toast('Setting saved','success',1500)"></div>
+      </div>
+      <div class="toggle-row">
+        <div><div style="font-size:.86rem;font-weight:600">Access Log in History</div><div style="font-size:.74rem;color:var(--text-m)">Log every decrypt attempt (success & failure)</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on');toast('Setting saved','success',1500)"></div>
+      </div>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="panel fade-up" style="border:1px solid rgba(255,68,102,.15);border-radius:var(--r)">
+      <div class="ptitle-sec" style="color:var(--danger)">⚠️ Danger Zone</div>
+      <p style="font-size:.8rem;color:var(--text-m);margin-bottom:1rem">Permanently delete your account and all associated encrypted files. This cannot be undone.</p>
+      <button class="btn btn-danger" style="width:100%" onclick="openModal('Delete Account','<p style=&quot;color:var(--text-m);font-size:.85rem;margin-bottom:1rem&quot;>This will permanently delete your account, all encrypted files, and all history. Are you sure?</p><div class=&quot;alert alert-danger&quot;>This action is irreversible.</div>',()=>{toast(`Account deletion requested — contact admin`,`info`)})">🗑 Delete Account</button>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div>
+    <!-- Active Files -->
+    <div class="panel fade-up" style="margin-bottom:1.25rem;border:1px solid var(--panel-b);border-radius:var(--r)">
+      <div class="ptitle-sec">🗂 Active Encrypted Files</div>
+      <div id="active-files-list"><div style="color:var(--text-m);font-size:.82rem;text-align:center;padding:1.5rem">Loading...</div></div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="panel fade-up" style="border:1px solid var(--panel-b);border-radius:var(--r)">
+      <div class="ptitle-sec">⚡ Quick Actions</div>
+      <a href="home.html?tab=encrypt" class="quick-link">
+        <div class="quick-link-ico">🔐</div>
+        <div><div class="quick-link-title">Encrypt a File</div><div class="quick-link-sub">Upload and hide a file using AES-256</div></div>
+        <div style="margin-left:auto;color:var(--text-m)">→</div>
+      </a>
+      <a href="home.html?tab=decrypt" class="quick-link">
+        <div class="quick-link-ico">🔓</div>
+        <div><div class="quick-link-title">Decrypt a File</div><div class="quick-link-sub">Enter token + OTP to get original file</div></div>
+        <div style="margin-left:auto;color:var(--text-m)">→</div>
+      </a>
+      <a href="history.html" class="quick-link">
+        <div class="quick-link-ico">📋</div>
+        <div><div class="quick-link-title">View History</div><div class="quick-link-sub">All activity logs from MongoDB</div></div>
+        <div style="margin-left:auto;color:var(--text-m)">→</div>
+      </a>
+        <div class="quick-link-ico">🚪</div>
+        <div><div class="quick-link-title">Logout</div><div class="quick-link-sub">End your current session</div></div>
+        <div style="margin-left:auto;color:var(--text-m)">→</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script>
+function toggleEdit(){
+  const p=document.getElementById('edit-panel');
+  p.style.display=p.style.display==='none'||!p.style.display?'block':'none';
+}
+function saveProfile(){toast('Profile update — connect backend to implement','info',3000);toggleEdit();}
+
+async function loadProfile(){
+  try{
+    const res=await apiFetch('/api/me');
+    const d=await res.json();
+    if(!d.logged_in){window.location.href='../index.html';return;}
+    else { document.getElementById('auth-nav-block').style.display='block'; }
+    const u=d.user,st=d.stats||{};
+    document.getElementById('p-av').textContent=(u.name||'?')[0].toUpperCase();
+    document.getElementById('p-name').textContent=u.name||'—';
+    document.getElementById('p-email').textContent=u.email||'—';
+    document.getElementById('p-since').textContent='Member since '+new Date(u.created_at).getFullYear();
+    document.getElementById('e-name').value=u.name||'';
+    document.getElementById('e-email').value=u.email||'';
+    document.getElementById('s-enc').textContent=st.total_enc||0;
+    document.getElementById('s-dec').textContent=st.total_dec||0;
+    document.getElementById('s-active').textContent=d.active_files||0;
+    document.getElementById('s-tamper').textContent=st.total_tamper||0;
+    loadActiveFiles();
+  }catch(e){toast('Cannot reach server','danger');}
+}
+
+async function loadActiveFiles(){
+  const el=document.getElementById('active-files-list');
+  try{
+    const res=await apiFetch('/api/active-files');
+    if(!res.ok){el.innerHTML='<p style="color:var(--text-m);font-size:.82rem;text-align:center;padding:1.5rem">Login to see active files</p>';return;}
+    const files=await res.json();
+    if(!files.length){el.innerHTML='<p style="color:var(--text-m);font-size:.82rem;text-align:center;padding:1.5rem">No active encrypted files</p>';return;}
+    el.innerHTML=files.map(f=>`
+      <div class="active-file">
+        <span style="font-size:1.8rem;flex-shrink:0">${f.cover_emoji||'📁'}</span>
+        <div style="flex:1;overflow:hidden">
+          <div style="font-size:.82rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.original_name}</div>
+          <div style="font-size:.7rem;color:var(--text-m)">${fmtSz(f.file_size)} · <span style="color:var(--warn)">${f.expires_at==='Unlimited'?'♾️ Unlimited':f.expires_at}</span></div>
+        </div>
+      </div>`).join('');
+  }catch(e){el.innerHTML='<p style="color:var(--text-m);font-size:.82rem;text-align:center;padding:1rem">No backend connection</p>';}
+}
+
+function fmtSz(b){if(!b||b<1024)return(b||0)+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(2)+'MB';}
+loadProfile();
+</script>
+</body>
+</html>

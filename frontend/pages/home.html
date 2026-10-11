@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CIFER — Encrypt File</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+<style>
+.enc-wrap{max-width:1080px;margin:0 auto;padding:0 2rem 5rem}
+.enc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start}
+.panel{padding:1.6rem;margin-bottom:1.25rem}
+.recv-row{display:flex;gap:.6rem}
+.recv-row input{flex:1}
+.result-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+.rinfo{background:rgba(59,158,255,.03);border-radius:var(--rsm);padding:.9rem}
+.rinfo-l{font-size:.68rem;color:var(--text-m);margin-bottom:.2rem;text-transform:uppercase;letter-spacing:.5px}
+.rinfo-v{font-size:.86rem;font-weight:600;color:var(--text)}
+.hash-box{background:rgba(59,158,255,.03);border:1px solid rgba(59,158,255,.09);border-radius:var(--rsm);padding:.75rem;font-family:monospace;font-size:.65rem;color:var(--b2);word-break:break-all;line-height:1.9}
+.speed-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.speed-lbl{font-size:.78rem;color:var(--text-m)}
+.speed-val{font-family:var(--fh);font-size:.95rem;font-weight:700;color:var(--b1)}
+@media(max-width:768px){.enc-grid{grid-template-columns:1fr}.enc-wrap{padding:0 1.5rem 4rem}}
+</style>
+</head>
+<body>
+<div class="liquid-bg"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div><div class="bg-dots"></div><div class="bg-lines"></div></div>
+<div id="cur"></div><div id="cring"></div>
+<div id="toast-container"></div>
+
+<nav class="navbar">
+  <div class="nav-logo"><a href="home.html">CIFER</a></div>
+  
+  <div class="nav-right" style="margin-left: auto;">
+    <div class="nav-links" id="auth-nav-block" style="display:none; align-items:center;">
+      
+      <div class="profile-dropdown">
+        <div class="profile-toggle">
+          <div style="width:24px;height:24px;background:var(--b1);color:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700">U</div>
+          <span style="font-size:.85rem;font-weight:600">Profile</span>
+          <span style="font-size:.8rem;opacity:.7">▼</span>
+        </div>
+        <div class="profile-menu">
+          <a href="profile.html" class="pmenu-item">👤 View Profile</a>
+          <a href="history.html" class="pmenu-item">📜 Activity History</a>
+          <a href="settings.html" class="pmenu-item">⚙️ Settings</a>
+          <div style="height:1px;background:rgba(0,128,128,.2);margin:.5rem 0"></div>
+          <a href="#" class="pmenu-item" style="color:var(--danger)" onclick="doLogout()">🚪 Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-tag">Dashboard</div>
+  <h1>🏠 CIFER Dashboard</h1>
+  <p>Select whether you want to conceal a file securely or decrypt an incoming payload.</p>
+</div>
+
+<div class="enc-wrap" style="max-width:1080px;margin:0 auto">
+  <div class="dashboard-tabs fade-up" style="max-width:800px;margin:0 auto 2.5rem;">
+    <button class="tab-btn" onclick="switchTab('encrypt')" id="tab-enc"><span class="tab-btn-ico">🔐</span> Encrypt File</button>
+    <button class="tab-btn" onclick="switchTab('decrypt')" id="tab-dec"><span class="tab-btn-ico">🔓</span> Decrypt File</button>
+  </div>
+  <div id="encrypt-section" style="display:none;">
+  <div class="enc-grid">
+    <!-- LEFT -->
+    <div>
+      <!-- Step 1: Upload -->
+      <div class="panel fade-up">
+        <div class="ptitle"><span class="pnum">1</span> Choose File</div>
+        <div class="upload-zone" id="uz">
+          <input type="file" id="file-input" onchange="onFile(this)"/>
+          <div class="uz-icon">📂</div>
+          <h3>Drop file here or click to browse</h3>
+          <p>Any format · Max 50 MB</p>
+          <div class="file-pill" id="file-pill"></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Receivers -->
+      <div class="panel fade-up">
+        <div class="ptitle"><span class="pnum">2</span> Receiver Emails</div>
+        <p style="font-size:.8rem;color:var(--text-m);margin-bottom:.85rem">Add one or more receiver emails. Each gets their own OTP when they request to decrypt.</p>
+        <div class="recv-tags" id="recv-tags"></div>
+        <div class="recv-row">
+          <input class="form-control" type="email" id="recv-input" placeholder="receiver@email.com" onkeydown="if(event.key==='Enter'||event.key===','){event.preventDefault();addRecv()}"/>
+          <button class="btn btn-outline" onclick="addRecv()">+ Add</button>
+        </div>
+        <div style="font-size:.7rem;color:var(--text-d);margin-top:.35rem">Press Enter or comma to add multiple emails</div>
+      </div>
+
+      <!-- Step 3: Settings -->
+      <div class="panel fade-up">
+        <div class="ptitle"><span class="pnum">3</span> Settings</div>
+        <div class="form-group">
+          <label>Encryption Algorithm</label>
+          <select class="form-control" id="algo">
+            <option value="aes256cbc" selected>AES-256-CBC (Recommended)</option>
+            <option value="aes256gcm">AES-256-GCM (Authenticated)</option>
+            <option value="aes128cbc">AES-128-CBC</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>File Expiry</label>
+          <select class="form-control" id="expiry">
+            <option value="1">1 Hour</option>
+            <option value="6">6 Hours</option>
+            <option value="24" selected>24 Hours</option>
+            <option value="48">48 Hours</option>
+            <option value="168">7 Days</option>
+            <option value="0">♾️ Unlimited — No Expiry</option>
+          </select>
+        </div>
+        <div class="alert alert-info" style="font-size:.77rem">🎲 Cover image is <strong>randomly assigned</strong> by the server — flowers, animals, birds, leaves. Each file gets a unique disguise.</div>
+      </div>
+
+      <button class="btn btn-primary btn-lg" style="width:100%" id="enc-btn" onclick="doEncrypt()">🔐 ENCRYPT NOW</button>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <!-- Strength -->
+      <div class="panel fade-up">
+        <div class="ptitle">Encryption Strength</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+          <div>
+            <div style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--b1)" id="s-pct">100%</div>
+            <div style="font-size:.82rem;font-weight:600;color:var(--b1)" id="s-lbl">Military Grade</div>
+            <div style="font-size:.72rem;color:var(--text-m)" id="s-algo">AES-256-CBC · SHA-256 · Random IV</div>
+          </div>
+          <div style="font-size:3rem" id="s-icon">🛡️</div>
+        </div>
+        <div class="progress-wrap"><div class="progress-fill" id="s-bar" style="width:100%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:.67rem;color:var(--text-d);margin-top:.3rem"><span>Basic</span><span>Strong</span><span>Military</span></div>
+      </div>
+
+      <!-- Speed (shown after encrypt) -->
+      <div class="panel fade-up" id="speed-panel" style="display:none">
+        <div class="ptitle">⚡ Encryption Speed</div>
+        <div class="speed-row"><span class="speed-lbl">Status</span><span id="sp-status" style="font-size:.82rem;color:var(--text-m)">Waiting...</span></div>
+        <div class="speed-row"><span class="speed-lbl">Time Taken</span><span class="speed-val" id="sp-time">—</span></div>
+        <div class="speed-row"><span class="speed-lbl">Throughput</span><span class="speed-val" id="sp-tp">—</span></div>
+        <div id="sp-prog-wrap" style="display:none;margin-top:.5rem">
+          <div class="progress-wrap"><div class="progress-fill" id="sp-prog" style="width:0"></div></div>
+          <div style="font-size:.7rem;color:var(--text-m);margin-top:.25rem" id="sp-pct">0%</div>
+        </div>
+      </div>
+
+      <!-- Hash -->
+      <div class="panel fade-up" id="hash-panel" style="display:none">
+        <div class="ptitle">🔑 SHA-256 Integrity Hash</div>
+        <div class="hash-box" id="hash-val">—</div>
+        <div style="font-size:.7rem;color:var(--text-m);margin-top:.4rem">Stored in MySQL · Verified before every decryption</div>
+      </div>
+
+      <!-- Result -->
+      <div class="panel fade-up panel-glow" id="result-panel" style="display:none">
+        <div class="alert alert-success">✅ File encrypted and stored in database!</div>
+        <div style="font-size:3rem;text-align:center;margin-bottom:.5rem" id="r-emoji">🌸</div>
+        <div style="text-align:center;font-family:var(--fh);font-size:.75rem;margin-bottom:1.25rem;color:var(--text-m)" id="r-theme">Cover: —</div>
+        <div class="result-row">
+          <div class="rinfo"><div class="rinfo-l">File Name</div><div class="rinfo-v" id="r-fname" style="font-size:.78rem;word-break:break-all">—</div></div>
+          <div class="rinfo"><div class="rinfo-l">Size</div><div class="rinfo-v" id="r-size">—</div></div>
+          <div class="rinfo"><div class="rinfo-l">Receivers</div><div class="rinfo-v" id="r-recv">—</div></div>
+          <div class="rinfo"><div class="rinfo-l">Expires</div><div class="rinfo-v" style="color:var(--warn)" id="r-exp">—</div></div>
+        </div>
+        <div class="alert alert-info" style="font-size:.76rem;margin-bottom:1rem">🛡️ <strong>CIFER v4 Security Protocol:</strong> Deliver this capability token out-of-band to your authorized recipient.</div>
+        <div style="background:rgba(59,158,255,.03);border:1px solid rgba(59,158,255,.09);border-radius:var(--rsm);padding:.75rem;margin-bottom:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">
+            <div style="font-size:.68rem;color:var(--text-m);text-transform:uppercase;letter-spacing:.5px">Bearer Capability Token</div>
+            <button class="btn btn-outline btn-sm" style="padding:0.2rem 0.6rem;font-size:0.7rem;" onclick="copyToken()">📋 Copy Token</button>
+          </div>
+          <div style="font-family:monospace;font-size:.75rem;color:var(--b1);word-break:break-all" id="r-token">—</div>
+        </div>
+        <button class="btn btn-outline" style="width:100%" onclick="encAnother()">🔄 Encrypt Another File</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </div>
+</div>
+
+<!-- DECRYPT SECTION -->
+<div id="decrypt-section" style="display:none">
+
+<div class="enc-wrap" style="padding:0">
+  <div id="step1">
+    <div class="panel fade-up">
+      <div class="form-group" style="margin-bottom:1.25rem;">
+        <label style="font-size:.82rem;font-weight:600;margin-bottom:.4rem;display:block;">Option A: Enter Bearer Capability Token (Out-of-Band)</label>
+        <div style="display:flex;gap:.5rem">
+          <input type="text" class="form-control" id="dec-token-input" placeholder="Paste 64-character bearer token here..." style="font-family:monospace;font-size:.8rem;"/>
+          <button class="btn btn-primary" onclick="lookupByToken()" style="white-space:nowrap;">Verify Token &amp; Request OTP →</button>
+        </div>
+      </div>
+      <div style="text-align:center;margin:1.2rem 0;color:var(--text-m);font-size:.75rem;letter-spacing:1px;">— OR —</div>
+      <div class="form-group" style="text-align: center; border: 2px dashed rgba(0,229,255, 0.4); padding: 1.5rem; border-radius: var(--r); cursor: pointer; transition: all 0.2s;" id="drop-zone" onclick="document.getElementById('file-input-dec').click()">
+        <div style="font-size: 2rem; margin-bottom: 0.3rem;">🌌</div>
+        <p style="color: var(--text-m); font-size: 0.85rem; margin-bottom: 0.3rem;">Option B: Drag &amp; drop your received Carrier Image</p>
+        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4)">Extracts cryptographic blob fingerprint</div>
+        <input type="file" id="file-input-dec" style="display: none;" accept="image/jpeg, image/png" onchange="fileSelectedDec(this)"/>
+      </div>
+      <div id="file-selected-name-dec" style="text-align:center;font-size:0.8rem;color:var(--b1);margin-top:0.5rem;display:none;"></div>
+      <button class="btn btn-outline" style="width:100%; margin-top:1rem;" onclick="uploadFileForToken()">🔍 Look Up Image &amp; Request OTP →</button>
+    </div>
+
+    <div class="panel fade-up" id="file-info-panel" style="display:none">
+      <div class="ptitle">File Information</div>
+      <div style="text-align:center;font-size:3rem;margin-bottom:.4rem" id="fi-emoji">🌸</div>
+      <div style="text-align:center;font-family:var(--fh);font-size:.7rem;color:var(--text-m);margin-bottom:1rem" id="fi-theme">—</div>
+      <div class="info-grid">
+        <div class="icell"><div class="icell-l">File Name</div><div class="icell-v" id="fi-name" style="font-size:.8rem;word-break:break-all">—</div></div>
+        <div class="icell"><div class="icell-l">File Size</div><div class="icell-v" id="fi-size">—</div></div>
+        <div class="icell"><div class="icell-l">Expires</div><div class="icell-v" style="color:var(--warn)" id="fi-exp">—</div></div>
+        <div class="icell"><div class="icell-l">Integrity</div><div class="icell-v" style="color:var(--success)" id="fi-int">✅ Protected</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: OTP -->
+  <div id="step2" style="display:none">
+    <div class="panel fade-up panel-glow">
+      <div class="ptitle"><span class="pnum">2</span> Enter OTP</div>
+      <div class="alert alert-info" style="margin-bottom:1.25rem">
+        📧 OTPs have been securely dispatched to all authorized receivers.
+        <div style="font-size:.73rem;color:var(--text-m);margin-top:.2rem">Check your inbox and spam folder. Valid for <strong style="color:var(--warn)">2 minutes</strong>.</div>
+      </div>
+      <div class="otp-row" id="otp-inputs" style="display:flex; gap:0.5rem; margin-bottom:1rem">
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,0)" onkeydown="otpBack(event,0)" style="width:16%; text-align:center; padding:1rem; font-size:1.5rem; background:rgba(0,0,0,0.5); border:1px solid rgba(0,229,255,0.2); color:white; border-radius:8px;" />
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,1)" onkeydown="otpBack(event,1)" style="width:16%; text-align:center; padding:1rem; font-size:1.5rem; background:rgba(0,0,0,0.5); border:1px solid rgba(0,229,255,0.2); color:white; border-radius:8px;" />
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,2)" onkeydown="otpBack(event,2)" style="width:16%; text-align:center; padding:1rem; font-size:1.5rem; background:rgba(0,0,0,0.5); border:1px solid rgba(0,229,255,0.2); color:white; border-radius:8px;" />
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,3)" onkeydown="otpBack(event,3)" style="width:16%; text-align:center; padding:1rem; font-size:1.5rem; background:rgba(0,0,0,0.5); border:1px solid rgba(0,229,255,0.2); color:white; border-radius:8px;" />
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,4)" onkeydown="otpBack(event,4)" style="width:16%; text-align:center; padding:1rem; font-size:1.5rem; background:rgba(0,0,0,0.5); border:1px solid rgba(0,229,255,0.2); color:white; border-radius:8px;" />
+        <input type="text" maxlength="1" inputmode="numeric" oninput="otpNext(this,5)" onkeydown="otpBack(event,5)" style="width:16%; text-align:center; padding:1rem; font-size:1.5rem; background:rgba(0,0,0,0.5); border:1px solid rgba(0,229,255,0.2); color:white; border-radius:8px;" />
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:.65rem 0 1rem">
+        <span style="font-size:.82rem" id="timer-el">⏱ 2:00 remaining</span>
+        <span style="font-size:.73rem;color:var(--text-m)" id="attempts-el">0 / 3 attempts</span>
+      </div>
+      <div id="otp-alert"></div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:.75rem" onclick="verifyOTP()">✅ Verify &amp; Decrypt →</button>
+      <button class="btn btn-ghost" style="width:100%" onclick="resendOTP()">↻ Resend OTP</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Blocked -->
+  <div id="step-blocked" style="display:none">
+    <div class="panel fade-up" style="border-color:rgba(255,68,102,.3);text-align:center;padding:3rem">
+      <div style="font-size:4rem;margin-bottom:1rem">🚫</div>
+      <h3 style="font-family:var(--fh);font-size:.95rem;margin-bottom:.5rem">Access Blocked</h3>
+      <p style="color:var(--text-m);font-size:.84rem;margin-bottom:1rem">3 failed attempts. Try again in:</p>
+      <div style="font-family:var(--fh);font-size:2.8rem;font-weight:700;color:var(--danger);margin-bottom:1.5rem" id="block-timer">30:00</div>
+      <div class="alert alert-danger" style="margin-bottom:1.5rem">⚠️ This attempt has been logged</div>
+      <button class="btn btn-outline" style="width:100%" onclick="resetDec()">← Start Over</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Success -->
+  <div id="step-success" style="display:none">
+    <div class="panel fade-up panel-glow" style="text-align:center;padding:3rem">
+      <div style="font-size:4rem;margin-bottom:.75rem">✅</div>
+      <h3 style="font-family:var(--fh);font-size:1rem;margin-bottom:.5rem;color:var(--success)">Decryption Successful!</h3>
+      <p style="color:var(--text-m);font-size:.84rem;margin-bottom:1.5rem">SHA-256 integrity verified. Your file is ready.</p>
+      <div style="background:rgba(59,158,255,.03);border:1px solid rgba(59,158,255,.09);border-radius:var(--rsm);padding:1rem;margin-bottom:1.5rem;text-align:left">
+        <div style="font-size:.68rem;color:var(--text-m);margin-bottom:.25rem;text-transform:uppercase">Decrypted File</div>
+        <div style="font-family:var(--fh);font-size:.85rem;color:var(--text)" id="dec-fname">—</div>
+      </div>
+      <div class="alert alert-success" style="margin-bottom:1.5rem">Download should have started automatically. If not, check popup blockers!</div>
+      <button class="btn btn-outline" style="width:100%" onclick="resetDec()">Decrypt Another File</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+
+
+<script>
+// --- TABS ---
+document.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const t = urlParams.get('tab');
+  if (t === 'encrypt' || t === 'decrypt') {
+      setTimeout(() => switchTab(t), 100);
+  }
+});
+
+function switchTab(tab) {
+  document.getElementById('tab-enc').classList.remove('active');
+  document.getElementById('tab-dec').classList.remove('active');
+  document.getElementById('encrypt-section').style.display = 'none';
+  document.getElementById('decrypt-section').style.display = 'none';
+  
+  if (tab === 'encrypt') {
+    document.getElementById('tab-enc').classList.add('active');
+    document.getElementById('encrypt-section').style.display = 'block';
+  } else {
+    document.getElementById('tab-dec').classList.add('active');
+    document.getElementById('decrypt-section').style.display = 'block';
+  }
+}
+
+// --- DECRYPT & TOKEN LOGIC ---
+let currentToken='', otpTimer=null, blockTimer=null;
+const MAX=3, OTP_SECS=120, BLOCK_SECS=1800;
+
+function copyToken() {
+  const tok = document.getElementById('r-token')?.textContent?.trim();
+  if(!tok || tok === '—') return;
+  navigator.clipboard.writeText(tok).then(() => {
+    toast('Capability token copied! Share out-of-band.', 'success', 3000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = tok;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    toast('Capability token copied!', 'success', 3000);
+  });
+}
+
+async function lookupByToken() {
+  const inp = document.getElementById('dec-token-input');
+  const tok = inp ? inp.value.trim() : '';
+  if(!tok) {
+    toast('Please enter your Bearer Capability Token', 'warning');
+    return;
+  }
+  currentToken = tok;
+  try {
+    const res = await apiFetch('/api/file/' + encodeURIComponent(tok));
+    if(!res.ok) {
+      toast('Token not found or expired', 'danger');
+      return;
+    }
+    const d = await res.json();
+    if(d.expired) { toast('This file has expired', 'danger'); return; }
+    document.getElementById('fi-emoji').textContent = d.cover_emoji || '🌸';
+    document.getElementById('fi-theme').textContent = 'Cover: ' + (d.cover_name || 'Standard');
+    document.getElementById('fi-name').textContent = d.original_name;
+    document.getElementById('fi-size').textContent = fmtSz(d.file_size || 0);
+    document.getElementById('fi-exp').textContent = d.expires_at === 'Unlimited' ? '♾️ Unlimited' : d.expires_at;
+    document.getElementById('file-info-panel').style.display = 'block';
+    toast('Capability token verified! Requesting OTP...', 'success');
+    setTimeout(requestOTP, 1000);
+  } catch(e) {
+    toast('Cannot reach server.', 'danger');
+  }
+}
+
+function fileSelectedDec(input) {
+  if(input.files && input.files[0]) {
+    document.getElementById('file-selected-name-dec').style.display = 'block';
+    document.getElementById('file-selected-name-dec').textContent = input.files[0].name;
+  }
+}
+
+async function uploadFileForToken(){
+  const f_input=document.getElementById('file-input-dec');
+  if(!f_input.files || !f_input.files[0]){toast('Please select an encrypted image file','warning');return;}
+  const fd = new FormData();
+  fd.append('file', f_input.files[0]);
+  
+  try{
+    const res=await apiFetch('/api/decrypt-upload',{method:'POST',body:fd,headers:{}});
+    if(!res.ok){
+        try{
+            const e=await res.json();
+            toast(e.error||'File not processed','danger');
+        }catch(e){ toast('File failed to process.','danger'); }
+        return;
+    }
+    const d=await res.json();
+    if(d.expired){toast('This file has expired','danger');return;}
+    currentToken = d.token || d.file_uuid || document.getElementById('dec-token-input')?.value?.trim() || '';
+    document.getElementById('fi-emoji').textContent=d.cover_emoji||'🌸';
+    document.getElementById('fi-theme').textContent='Cover: '+(d.cover_name||'Standard');
+    document.getElementById('fi-name').textContent=d.original_name;
+    document.getElementById('fi-size').textContent=fmtSz(d.file_size||0);
+    document.getElementById('fi-exp').textContent=d.expires_at==='Unlimited'?'♾️ Unlimited':d.expires_at;
+    document.getElementById('file-info-panel').style.display='block';
+    toast('Carrier file verified! Requesting OTP...','success');
+    
+    // Auto request OTP
+    setTimeout(requestOTP, 1500);
+  }catch(e){toast('Cannot reach server.','danger');}
+}
+
+async function requestOTP(){
+  try{
+    const tok = currentToken || document.getElementById('dec-token-input')?.value?.trim();
+    if(!tok){toast('Please provide capability token or upload carrier image','warning');return;}
+    const res=await apiFetch('/api/request-otp',{method:'POST',body:JSON.stringify({token:tok})});
+    const d=await res.json();
+    if(!res.ok){toast(d.error||'Failed to send OTP','danger');return;}
+    document.getElementById('step1').style.display='none';
+    document.getElementById('step2').style.display='block';
+    startOTPTimer();
+    toast('OTP dispatched successfully!','success',5000);
+    
+  }catch(e){toast('Cannot reach server','danger');}
+}
+
+function startOTPTimer(){
+  clearInterval(otpTimer);
+  let sec=OTP_SECS;
+  const el=document.getElementById('timer-el');
+  otpTimer=setInterval(()=>{
+    sec--;
+    const m=Math.floor(sec/60),s=sec%60;
+    el.textContent=`⏱ ${m}:${s.toString().padStart(2,'0')} remaining`;
+    el.style.color=sec<30?'var(--danger)':'';
+    if(sec<=0){clearInterval(otpTimer);el.textContent='⏱ OTP expired — resend';}
+  },1000);
+}
+
+function otpNext(el, idx) {
+  if (el.value.length === 1 && idx < 5) { document.querySelectorAll('#otp-inputs input')[idx + 1].focus(); }
+}
+function otpBack(e, idx) {
+  if (e.key === 'Backspace' && e.target.value === '' && idx > 0) { document.querySelectorAll('#otp-inputs input')[idx - 1].focus(); }
+}
+
+async function verifyOTP(){
+  const inputs=document.querySelectorAll('#otp-inputs input');
+  const otp=Array.from(inputs).map(i=>i.value).join('');
+  if(otp.length<6){showOtpAlert('Enter all 6 digits','warning');return;}
+
+  try{
+    const res=await apiFetch('/api/decrypt',{method:'POST',body:JSON.stringify({token:currentToken,otp})});
+    if(res.ok){
+      clearInterval(otpTimer);
+      const blob=await res.blob();
+      const cd=res.headers.get('Content-Disposition')||'';
+      const fnMatch=cd.match(/filename="?([^"]+)"?/);
+      const fname=fnMatch?fnMatch[1]:'decrypted_file';
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=fname; a.click();
+      URL.revokeObjectURL(url);
+      document.getElementById('step2').style.display='none';
+      document.getElementById('step-success').style.display='block';
+      document.getElementById('dec-fname').textContent=fname;
+      toast('Decryption successful! 🎉','success',6000);
+      return;
+    }
+
+    const d=await res.json();
+    if(d.tamper){
+      showOtpAlert('⚠️ TAMPER DETECTED — file integrity check failed!','danger');
+      toast('File has been tampered with!','danger',8000); return;
+    }
+    if(d.blocked||res.status===429){
+      clearInterval(otpTimer);
+      document.getElementById('step2').style.display='none';
+      document.getElementById('step-blocked').style.display='block';
+      startBlockTimer(); toast('Access blocked — 3 failed attempts','danger',5000); return;
+    }
+    inputs.forEach(i=>{i.value='';i.classList.add('error');});
+    setTimeout(()=>inputs.forEach(i=>i.classList.remove('error')),700);
+    inputs[0].focus();
+    const att=parseInt(d.attempts_left)||0;
+    document.getElementById('attempts-el').textContent=`${3-att} / 3 attempts`;
+    showOtpAlert(d.error||'Wrong OTP','danger');
+    toast('Incorrect OTP','danger',2000);
+  }catch(e){toast('Server error: '+e.message,'danger');}
+}
+
+function showOtpAlert(msg,type){
+  document.getElementById('otp-alert').innerHTML=`<div class="alert alert-${type}" style="margin-bottom:.75rem">${msg}</div>`;
+  setTimeout(()=>document.getElementById('otp-alert').innerHTML='',3500);
+}
+
+async function resendOTP(){
+  const res=await apiFetch('/api/request-otp',{method:'POST',body:JSON.stringify({token:currentToken})});
+  const d=await res.json();
+  document.querySelectorAll('#otp-inputs input').forEach(i=>i.value='');
+  document.querySelectorAll('#otp-inputs input')[0].focus();
+  startOTPTimer();
+  toast(res.ok?'New OTP dispatched!':d.error||'Failed','success');
+  
+}
+
+function startBlockTimer(){
+  let sec=BLOCK_SECS;
+  const el=document.getElementById('block-timer');
+  blockTimer=setInterval(()=>{
+    sec--;
+    const m=Math.floor(sec/60),s=sec%60;
+    el.textContent=`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    if(sec<=0){clearInterval(blockTimer);resetDec();}
+  },1000);
+}
+
+function resetDec(){
+  clearInterval(otpTimer); clearInterval(blockTimer);
+  currentToken='';
+  document.getElementById('step1').style.display='block';
+  document.getElementById('step2').style.display='none';
+  document.getElementById('step-blocked').style.display='none';
+  document.getElementById('step-success').style.display='none';
+  document.getElementById('file-info-panel').style.display='none';
+  document.getElementById('file-input-dec').value='';
+  document.getElementById('file-selected-name-dec').style.display='none';
+  document.querySelectorAll('#otp-inputs input').forEach(i=>i.value='');
+}
+
+let selFile=null, receivers=[];
+
+const algoMap={
+  aes256cbc:{pct:100,lbl:'Military Grade',algo:'AES-256-CBC · SHA-256 · Random IV',icon:'🛡️'},
+  aes256gcm:{pct:100,lbl:'Military Grade+',algo:'AES-256-GCM · Authenticated Encryption',icon:'🔒'},
+  aes128cbc:{pct:65, lbl:'Strong',algo:'AES-128-CBC · SHA-256',icon:'🔐'},
+};
+document.getElementById('algo').addEventListener('change',function(){
+  const m=algoMap[this.value];
+  document.getElementById('s-pct').textContent=m.pct+'%';
+  document.getElementById('s-lbl').textContent=m.lbl;
+  document.getElementById('s-algo').textContent=m.algo;
+  document.getElementById('s-icon').textContent=m.icon;
+  document.getElementById('s-bar').style.width=m.pct+'%';
+});
+
+function onFile(inp){
+  const f=inp.files[0]; if(!f)return;
+  selFile=f;
+  const p=document.getElementById('file-pill');
+  p.style.display='block'; p.textContent=`📄 ${f.name}  (${fmtSz(f.size)})`;
+  document.getElementById('speed-panel').style.display='block';
+  toast('File selected: '+f.name,'info',2500);
+}
+
+function fmtSz(b){if(b<1024)return b+'B';if(b<1048576)return(b/1024).toFixed(1)+'KB';return(b/1048576).toFixed(2)+'MB';}
+
+function addRecv(){
+  const inp=document.getElementById('recv-input');
+  const email=inp.value.trim().replace(/,/g,'');
+  if(!email)return;
+  if(!/\S+@\S+\.\S+/.test(email)){toast('Enter a valid email','warning');return;}
+  if(receivers.includes(email)){toast('Already added','warning');return;}
+  receivers.push(email); renderRecvs(); inp.value='';
+  toast('Added: '+email,'success',2000);
+}
+function removeRecv(e){receivers=receivers.filter(r=>r!==e);renderRecvs();}
+function renderRecvs(){
+  document.getElementById('recv-tags').innerHTML=receivers.map(r=>`<div class="recv-tag">${r}<button onclick="removeRecv('${r}')">×</button></div>`).join('');
+}
+
+async function doEncrypt(){
+  if(!selFile){toast('Select a file first','warning');return;}
+  if(receivers.length===0){toast('Add at least one receiver email','warning');return;}
+
+  const btn=document.getElementById('enc-btn');
+  btn.disabled=true; btn.textContent='⏳ Encrypting...';
+  document.getElementById('sp-prog-wrap').style.display='block';
+  document.getElementById('sp-status').textContent='🔄 Uploading & encrypting...';
+  document.getElementById('sp-status').style.color='var(--warn)';
+
+  let prog=0;
+  const iv=setInterval(()=>{
+    prog=Math.min(90,prog+Math.random()*7+2);
+    document.getElementById('sp-prog').style.width=prog+'%';
+    document.getElementById('sp-pct').textContent=Math.round(prog)+'%';
+  },80);
+
+  try{
+    const fd=new FormData();
+    fd.append('file',selFile);
+    fd.append('receivers',JSON.stringify(receivers));
+    fd.append('expiry_hours',document.getElementById('expiry').value);
+
+    const res=await fetch(API+'/api/encrypt',{method:'POST',credentials:'include',body:fd});
+    clearInterval(iv);
+    document.getElementById('sp-prog').style.width='100%';
+    document.getElementById('sp-pct').textContent='100%';
+
+    const d=await res.json();
+    if(!res.ok){
+      if(res.status===401){toast('Please login first','warning');window.location.href='../index.html';return;}
+      throw new Error(d.error||'Encryption failed');
+    }
+
+    document.getElementById('sp-status').textContent='✅ Complete';
+    document.getElementById('sp-status').style.color='var(--success)';
+    document.getElementById('sp-time').textContent=d.enc_time||'—';
+    document.getElementById('sp-tp').textContent=d.throughput||'—';
+    document.getElementById('hash-val').textContent=d.file_hash||'—';
+    document.getElementById('hash-panel').style.display='block';
+
+    document.getElementById('r-emoji').textContent=d.cover_emoji||'🌸';
+    document.getElementById('r-theme').textContent='Cover: '+d.cover_name;
+    document.getElementById('r-fname').textContent=d.file_name;
+    document.getElementById('r-size').textContent=fmtSz(selFile.size);
+    document.getElementById('r-recv').textContent=d.receivers.length+' receiver(s)';
+    document.getElementById('r-exp').textContent=d.expires_at==='Unlimited'?'♾️ Unlimited':new Date(d.expires_at).toLocaleString();
+    document.getElementById('r-token').textContent=d.token;
+    document.getElementById('result-panel').style.display='block';
+    document.getElementById('result-panel').scrollIntoView({behavior:'smooth'});
+    toast('Encrypted successfully! Downloading image...','success',4000);
+
+    // Download the Steganography Image
+    const resDown = await fetch(API+'/api/download/'+d.token, {credentials:'include'});
+    if(resDown.ok){
+      const blob = await resDown.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = d.token + ".jpg";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } else {
+      toast('Failed to download the generated image cover', 'danger');
+    }
+
+  }catch(err){
+    clearInterval(iv);
+    document.getElementById('sp-status').textContent='❌ Failed';
+    document.getElementById('sp-status').style.color='var(--danger)';
+    toast('Error: '+err.message,'danger',6000);
+  }
+  btn.disabled=false; btn.textContent='🔐 ENCRYPT NOW';
+}
+
+function encAnother(){
+  selFile=null; receivers=[];
+  document.getElementById('recv-tags').innerHTML='';
+  document.getElementById('file-pill').style.display='none';
+  document.getElementById('file-input').value='';
+  document.getElementById('result-panel').style.display='none';
+  document.getElementById('hash-panel').style.display='none';
+  document.getElementById('sp-prog-wrap').style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Drag & drop
+const uz=document.getElementById('uz');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag-over')});
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag-over'));
+uz.addEventListener('drop',e=>{
+  e.preventDefault();uz.classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];
+  if(f){selFile=f;const p=document.getElementById('file-pill');p.style.display='block';p.textContent=`📄 ${f.name} (${fmtSz(f.size)})`;toast('File: '+f.name,'info',2000);}
+});
+
+async function requireAuth(){
+    const d = await loadAuthState();
+    if(!d.logged_in) window.location.href='../index.html';
+    else { document.getElementById('auth-nav-block').style.display='block'; }
+}
+requireAuth();
+</script>
+</body>
+</html>

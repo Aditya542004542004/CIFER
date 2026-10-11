@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CIFER — Settings</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+<style>
+.main{max-width:1080px;margin:0 auto;padding:0 2rem 5rem}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;margin-bottom:2rem}
+.filter-bar{display:flex;gap:.55rem;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem}
+@media(max-width:768px){.stats-grid{grid-template-columns:1fr 1fr}.main{padding:0 1.5rem 4rem}}
+</style>
+</head>
+<body>
+
+
+<div id="bg-canvas"><div class="bg-dots"></div><div class="bg-lines"></div><div class="bg-orb orb1"></div><div class="bg-orb orb2"></div><div class="bg-scan"></div></div>
+<div id="cur"></div><div id="cring"></div>
+<div id="toast-container"></div>
+
+<nav class="navbar">
+  <div class="nav-logo"><a href="home.html">CIFER</a></div>
+  
+  <div class="nav-right" style="margin-left: auto;">
+    <div class="nav-links" id="auth-nav-block" style="display:none; align-items:center;">
+      
+      <div class="profile-dropdown">
+        <div class="profile-toggle">
+          <div style="width:24px;height:24px;background:var(--b1);color:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700">U</div>
+          <span style="font-size:.85rem;font-weight:600">Profile</span>
+          <span style="font-size:.8rem;opacity:.7">▼</span>
+        </div>
+        <div class="profile-menu">
+          <a href="profile.html" class="pmenu-item">👤 View Profile</a>
+          <a href="history.html" class="pmenu-item">📜 Activity History</a>
+          <a href="settings.html" class="pmenu-item">⚙️ Settings</a>
+          <div style="height:1px;background:rgba(0,128,128,.2);margin:.5rem 0"></div>
+          <a href="#" class="pmenu-item" style="color:var(--danger)" onclick="doLogout()">🚪 Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-tag">Preferences</div>
+  <h1>⚙️ Settings</h1>
+  <p>Manage your account preferences and security options.</p>
+</div>
+
+<div class="main">
+  <div class="panel fade-up" style="max-width: 600px; margin: 0 auto">
+    <h3 style="font-family:var(--fh); font-size:1.1rem; margin-bottom:1rem; color:var(--text)">Account Security</h3>
+    
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600; font-size:0.9rem">Two-Factor Authentication (2FA)</div>
+        <div style="font-size:0.8rem; color:var(--text-m)">Require an OTP sent to your email on every login attempt.</div>
+      </div>
+      <div class="toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+    
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600; font-size:0.9rem">Stealth Mode</div>
+        <div style="font-size:0.8rem; color:var(--text-m)">Obscure file metadata in the activity log dashboard.</div>
+      </div>
+      <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600; font-size:0.9rem">Email Notifications</div>
+        <div style="font-size:0.8rem; color:var(--text-m)">Get notified whenever your files are successfully decrypted.</div>
+      </div>
+      <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+    </div>
+    
+    <h3 style="font-family:var(--fh); font-size:1.1rem; margin-top:2rem; margin-bottom:1rem; color:var(--text)">Performance</h3>
+    
+    <div class="toggle-row">
+      <div>
+        <div style="font-weight:600; font-size:0.9rem">Hardware Acceleration</div>
+        <div style="font-size:0.8rem; color:var(--text-m)">Use Web Crypto API where available to speed up local encryption.</div>
+      </div>
+      <div class="toggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+    
+    <div style="margin-top:2rem">
+      <button class="btn btn-primary" style="width:100%" onclick="toast('Settings saved successfully', 'success')">Save Preferences</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/main.js"></script>
+<script>
+async function requireAuth(){
+    const d = await loadAuthState();
+    if(!d.logged_in) window.location.href='../index.html';
+    else { document.getElementById('auth-nav-block').style.display='block'; }
+}
+requireAuth();
+</script>
+</body>
+</html>

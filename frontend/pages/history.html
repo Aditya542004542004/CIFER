@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CIFER — History</title>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+<style>
+.main{max-width:1080px;margin:0 auto;padding:0 2rem 5rem}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;margin-bottom:2rem}
+.filter-bar{display:flex;gap:.55rem;flex-wrap:wrap;align-items:center;margin-bottom:1.25rem}
+@media(max-width:768px){.stats-grid{grid-template-columns:1fr 1fr}.main{padding:0 1.5rem 4rem}}
+</style>
+</head>
+<body>
+
+
+<div id="bg-canvas"><div class="bg-dots"></div><div class="bg-lines"></div><div class="bg-orb orb1"></div><div class="bg-orb orb2"></div><div class="bg-scan"></div></div>
+<div id="cur"></div><div id="cring"></div>
+<div id="toast-container"></div>
+
+<nav class="navbar">
+  <div class="nav-logo"><a href="home.html">CIFER</a></div>
+  
+  <div class="nav-right" style="margin-left: auto;">
+    <div class="nav-links" id="auth-nav-block" style="display:none; align-items:center;">
+      
+      <div class="profile-dropdown">
+        <div class="profile-toggle">
+          <div style="width:24px;height:24px;background:var(--b1);color:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700">U</div>
+          <span style="font-size:.85rem;font-weight:600">Profile</span>
+          <span style="font-size:.8rem;opacity:.7">▼</span>
+        </div>
+        <div class="profile-menu">
+          <a href="profile.html" class="pmenu-item">👤 View Profile</a>
+          <a href="history.html" class="pmenu-item">📜 Activity History</a>
+          <a href="settings.html" class="pmenu-item">⚙️ Settings</a>
+          <div style="height:1px;background:rgba(0,128,128,.2);margin:.5rem 0"></div>
+          <a href="#" class="pmenu-item" style="color:var(--danger)" onclick="doLogout()">🚪 Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="page-tag">Activity Log</div>
+  <h1>📋 File History</h1>
+      <p style="color:var(--text-m);font-size:.85rem;max-width:400px">Every encryption, decryption, tamper alert, and blocked attempt — all securely logged in MongoDB.</p>
+    </div>
+
+<div class="main">
+  <div class="stats-grid">
+    <div class="stat-card fade-up"><div class="snum" id="h-enc">0</div><div class="slbl">Encrypted</div></div>
+    <div class="stat-card fade-up"><div class="snum" id="h-dec">0</div><div class="slbl">Decrypted</div></div>
+    <div class="stat-card fade-up" style="border-color:rgba(255,68,102,.15)"><div class="snum" style="color:var(--danger)" id="h-tamper">0</div><div class="slbl">Tamper Alerts</div></div>
+    <div class="stat-card fade-up" style="border-color:rgba(245,197,24,.15)"><div class="snum" style="color:var(--warn)" id="h-fail">0</div><div class="slbl">Failed/Blocked</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="fil-btn active" onclick="filter('all',this)">All</button>
+    <button class="fil-btn" onclick="filter('encrypt',this)">🔐 Encrypted</button>
+    <button class="fil-btn" onclick="filter('decrypt',this)">🔓 Decrypted</button>
+    <button class="fil-btn" onclick="filter('tamper',this)">⚠️ Tamper</button>
+    <button class="fil-btn" onclick="filter('failed',this)">❌ Failed</button>
+    <input class="form-control" type="text" placeholder="🔍 Search…" style="width:200px;margin-left:auto;font-size:.82rem;padding:.42rem .9rem" oninput="search(this.value)"/>
+  </div>
+
+  <div class="table-wrap">
+    <table class="data-table" id="hist-table">
+      <thead><tr><th>#</th><th>Cover</th><th>File</th><th>Event</th><th>Detail</th><th>Date</th><th>Status</th><th></th></tr></thead>
+      <tbody id="hist-body"></tbody>
+    </table>
+    <div id="empty-msg" style="display:none;text-align:center;padding:4rem;color:var(--text-m)">
+      <div style="font-size:3rem;margin-bottom:1rem">📭</div><p>No records yet. Start encrypting files!</p>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js"></script>
+<script>
+let allRows=[], curFilter='all', curSearch='';
+
+async function loadHistory(){
+  try{
+    const d=await loadAuthState();
+    if(d.logged_in) { document.getElementById('auth-nav-block').style.display='block'; }
+    const res=await apiFetch('/api/history');
+    if(!res.ok){if(res.status===401){document.getElementById('empty-msg').style.display='block';document.getElementById('empty-msg').innerHTML='<div style="font-size:3rem;margin-bottom:1rem">🔒</div><p>Please <a href="../index.html" style="color:var(--b1)">login</a> to view history</p>';return;}}
+    allRows=await res.json();
+    updateStats();render();
+  }catch(e){
+    // Show demo data when no backend
+    allRows=demoData();updateStats();render();
+  }
+}
+
+function demoData(){
+  return [
+    {id:1,original_name:'project_report.pdf',cover_emoji:'🌸',cover_name:'Cherry Blossom',event:'encrypt',detail:'Receivers: alice@mail.com',created_at:'Mar 10 2025, 2:34 PM',status:'success'},
+    {id:2,original_name:'budget_q1.xlsx',cover_emoji:'🦋',cover_name:'Butterfly',event:'decrypt',detail:'By: alice@mail.com',created_at:'Mar 10 2025, 1:15 PM',status:'success'},
+    {id:3,original_name:'secret_doc.txt',cover_emoji:'🌿',cover_name:'Forest',event:'tamper',detail:'Hash mismatch',created_at:'Mar 9 2025, 11:05 AM',status:'tampered'},
+    {id:4,original_name:'id_scan.png',cover_emoji:'🐱',cover_name:'Cat',event:'encrypt',detail:'Receivers: carol@co.com, dave@co.com',created_at:'Mar 9 2025, 9:20 AM',status:'success'},
+    {id:5,original_name:'design.zip',cover_emoji:'🌺',cover_name:'Hibiscus',event:'failed',detail:'Blocked: bob@mail.com',created_at:'Mar 8 2025, 8:55 PM',status:'blocked'},
+  ];
+}
+
+function updateStats(){
+  document.getElementById('h-enc').textContent=allRows.filter(r=>r.event==='encrypt').length;
+  document.getElementById('h-dec').textContent=allRows.filter(r=>r.event==='decrypt').length;
+  document.getElementById('h-tamper').textContent=allRows.filter(r=>r.event==='tamper').length;
+  document.getElementById('h-fail').textContent=allRows.filter(r=>r.status==='blocked'||r.event==='failed').length;
+}
+
+function render(){
+  let d=allRows;
+  if(curFilter!=='all') d=d.filter(r=>r.event===curFilter||(curFilter==='failed'&&r.status==='blocked'));
+  if(curSearch) d=d.filter(r=>(r.original_name+r.detail).toLowerCase().includes(curSearch));
+
+  document.getElementById('empty-msg').style.display=d.length?'none':'block';
+  document.getElementById('hist-body').innerHTML=d.map((r,i)=>`
+    <tr>
+      <td style="color:var(--text-m);font-size:.75rem">${i+1}</td>
+      <td style="font-size:1.5rem" title="${r.cover_name||''}">${r.cover_emoji||'📁'}</td>
+      <td><div style="font-weight:600;font-size:.83rem">${esc(r.original_name||'—')}</div></td>
+      <td>${evBadge(r.event)}</td>
+      <td style="font-size:.77rem;color:var(--text-m);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.detail||'—')}</td>
+      <td style="font-size:.75rem;color:var(--text-m)">${r.created_at||'—'}</td>
+      <td>${stBadge(r.status)}</td>
+      <td><button onclick="viewDetail('${r.id}')" class="btn btn-ghost btn-sm">View</button></td>
+    </tr>`).join('');
+}
+
+function filter(f,btn){curFilter=f;document.querySelectorAll('.fil-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+function search(v){curSearch=v.toLowerCase();render();}
+function esc(s){return String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function evBadge(e){return {encrypt:'<span class="badge badge-info">🔐 Encrypt</span>',decrypt:'<span class="badge badge-success">🔓 Decrypt</span>',tamper:'<span class="badge badge-danger">⚠️ Tamper</span>',failed:'<span class="badge badge-warning">❌ Failed</span>'}[e]||`<span class="badge">${e}</span>`;}
+function stBadge(s){return {success:'<span class="badge badge-success">✅ Success</span>',tampered:'<span class="badge badge-danger">⚠️ Tampered</span>',blocked:'<span class="badge badge-danger">🚫 Blocked</span>',failed:'<span class="badge badge-warning">❌ Failed</span>'}[s]||`<span class="badge">${s}</span>`;}
+
+function viewDetail(id){
+  const r=allRows.find(x=>x.id===id); if(!r)return;
+  openModal(r.original_name||'Detail',`<div style="display:grid;gap:.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--text-m);font-size:.8rem">Cover</span><span>${r.cover_emoji||''} ${r.cover_name||'—'}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--text-m);font-size:.8rem">Event</span>${evBadge(r.event)}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--text-m);font-size:.8rem">Status</span>${stBadge(r.status)}</div>
+    <div style="display:flex;justify-content:space-between"><span style="color:var(--text-m);font-size:.8rem">Detail</span><span style="font-size:.82rem;text-align:right;max-width:250px">${esc(r.detail||'—')}</span></div>
+    <div style="display:flex;justify-content:space-between"><span style="color:var(--text-m);font-size:.8rem">Date</span><span style="font-size:.82rem">${r.created_at}</span></div>
+    ${r.status==='tampered'?'<div class="alert alert-danger" style="margin:0">⚠️ SHA-256 hash mismatch. File was modified.</div>':''}
+    ${r.status==='blocked'?'<div class="alert alert-warning" style="margin:0">🚫 Access blocked after 3 failed OTP attempts.</div>':''}
+  </div>`);
+}
+
+loadHistory();
+</script>
+</body>
+</html>
